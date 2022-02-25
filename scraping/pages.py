@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List, Callable
 import json
-import os
 
 URL = "https://www.racingpost.com/results/393/lingfield-aw/2022-02-19/803339"
 page = requests.get(URL)

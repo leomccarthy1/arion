@@ -1,6 +1,7 @@
 from race import BaseRaceScraper
 import json
 import os
+from re import sub
 
 URLS = [
     "https://www.racingpost.com/results/1353/newcastle-aw/2022-02-21/803348",
@@ -34,6 +35,9 @@ class ResultScraper(BaseRaceScraper):
         self.runner_info["horse_name"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "link-horseName"})
         )
+        self.runner_info["horse_num"] = self.extract_text(
+            self.soup.find_all("span", {"class": "rp-horseTable__saddleClothNo"})
+        )
         self.runner_info["jockey"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "link-jockeyName"}),
             skip=True,
@@ -42,6 +46,8 @@ class ResultScraper(BaseRaceScraper):
             self.soup.find_all("a", {"data-test-selector": "link-trainerName"}),
             skip=True,
         )
+        self.runner_info["price"] = self.get_starting_prices()
+        
         self.runner_info["age"] = self.extract_text(
             self.soup.find_all("td", {"data-test-selector": "horse-age"})
         )
@@ -159,24 +165,50 @@ class ResultScraper(BaseRaceScraper):
                 band_rating = bands.strip()
 
         return band_rating
+    
+    def get_starting_prices(self):
+        sps = self.extract_text(
+            self.soup.find_all("span", {"class": "rp-horseTable__horse__price"})
+        )
+        sps = [sp.replace('No Odds', '').strip() for sp in sps]
+        odds = [sub('(F|J|C)', '', sp) for sp in sps]
+
+        return self.fraction_to_decimal(odds)
+
+    def fraction_to_decimal(self, fractions):
+        decimal = []
+        for fraction in fractions:
+            if fraction in {'', 'No Odds', '&'}:
+                decimal.append('')
+            elif fraction.lower() in {'evens', 'evs'}:
+                decimal.append('2.00')
+            else:
+                num, den = fraction.split('/')
+                decimal.append(f'{float(num) / float(den) + 1.00:.2f}')
+
+        return decimal
 
 
-if not os.path.exists("scraping/data/"):
-    os.makedirs("scraping/data/")
 
-file_path = f"scraping/data/1.csv"
+def save_csv(file_path):
+    if not os.path.exists("scraping/data/"):
+        os.makedirs("scraping/data/")
+
+    with open(file_path, "w", encoding="utf-8") as csv:
+        first = True
+        for URL in URLS:
+            try:
+                race = ResultScraper(URL)
+                print(race.runner_info['price'])
+            except VoidRaceError:
+                continue
+            while first:
+                fields = [*race.race_info] + [*race.runner_info]
+                csv.write(",".join(fields) + "\n")
+                first = False
+            for row in race.csv_data:
+                csv.write(row + "\n")
 
 
-with open(file_path, "w", encoding="utf-8") as csv:
-    first = True
-    for URL in URLS:
-        try:
-            race = ResultScraper(URL)
-        except VoidRaceError:
-            continue
-        while first:
-            fields = [*race.race_info] + [*race.runner_info]
-            csv.write(",".join(fields) + "\n")
-            first = False
-        for row in race.csv_data:
-            csv.write(row + "\n")
+
+save_csv("scraping/data/1.csv")
