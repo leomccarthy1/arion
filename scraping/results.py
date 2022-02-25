@@ -178,6 +178,5 @@ with open(file_path, "w", encoding="utf-8") as csv:
             fields = [*race.race_info] + [*race.runner_info]
             csv.write(",".join(fields) + "\n")
             first = False
-        print(race.race_info['rating_band'])
         for row in race.csv_data:
             csv.write(row + "\n")
