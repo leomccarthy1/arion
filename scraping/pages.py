@@ -13,6 +13,12 @@ def courses(code='gb'):
             yield course.split('-')[0].strip(), ' '.join(course.split('-')[1::]).strip()
 
 
+def courses(code='gb'):
+    courses = json.load(open('scraping/_courses', 'r').read())
+    for id, course in courses[code].items():
+        yield id,course
+
+
 def clean_strings(string:str):
 
     return string.strip().replace("'","").replace(")","").replace("(","").title().replace(".","")
@@ -112,28 +118,28 @@ def scrape_race(URL : str) -> None:
     page = requests.get(URL)
 
     soup = BeautifulSoup(page.content, "html.parser")
-    going = extract_text(soup.find_all( "span" , {"class":"rp-raceTimeCourseName_condition"}))
-    horse_names = extract_text(soup.find_all("a", {"data-test-selector":"link-horseName"}))
-    jockey_names = extract_text(soup.find_all("a", {"data-test-selector":"link-jockeyName"}), skip = True)
-    trainer_name = extract_text(soup.find_all("a", {"data-test-selector":"link-trainerName"}),skip = True)
-    rpr = extract_text(soup.find_all("td", {"data-test-selector":"full-result-rpr"}))
-    ts = extract_text(soup.find_all("td", {"data-test-selector":"full-result-topspeed"}))
-    ratings = extract_text(soup.find_all("td", {"data-ending":"OR"}))
-    age = extract_text(soup.find_all("td", {"data-test-selector":"horse-age"}))
-    pos = extract_text(soup.find_all("span",{"data-test-selector":'text-horsePosition'}))
-    date = soup.find_all("main",{"data-test-selector":"results-items-container"})
-    lengths = get_lengths()
-    dist = get_distance()
-    main = soup.find_all('main')[0]
-    id = main.get("data-analytics-race-id")
-    date = main.get("data-analytics-race-date")
-    time=main.get("data-analytics-race-time")
-    course = main.get("data-analytics-coursename")
+    #going = extract_text(soup.find_all( "span" , {"class":"rp-raceTimeCourseName_condition"}))
+    #horse_names = extract_text(soup.find_all("a", {"data-test-selector":"link-horseName"}))
+    #jockey_names = extract_text(soup.find_all("a", {"data-test-selector":"link-jockeyName"}), skip = True)
+    #trainer_name = extract_text(soup.find_all("a", {"data-test-selector":"link-trainerName"}),skip = True)
+    #rpr = extract_text(soup.find_all("td", {"data-test-selector":"full-result-rpr"}))
+    #ts = extract_text(soup.find_all("td", {"data-test-selector":"full-result-topspeed"}))
+    #ratings = extract_text(soup.find_all("td", {"data-ending":"OR"}))
+    #age = extract_text(soup.find_all("td", {"data-test-selector":"horse-age"}))
+    #pos = extract_text(soup.find_all("span",{"data-test-selector":'text-horsePosition'}))
+    #date = soup.find_all("main",{"data-test-selector":"results-items-container"})
+    #lengths = get_lengths()
+    #dist = get_distance()
+    #main = soup.find_all('main')[0]
+    #id = main.get("data-analytics-race-id")
+    #date = main.get("data-analytics-race-date")
+    #time=main.get("data-analytics-race-time")
+    #course = main.get("data-analytics-coursename")
     race_class = extract_text(soup.find_all("span",{"class":"rp-raceTimeCourseName_class"}))[0].split()[1]
     draw = extract_text(soup.find_all("sup",{"class":'rp-horseTable__pos__draw'}), dtype=int)
     num = extract_text(soup.find_all("span",{"class":"rp-horseTable__saddleClothNo"}), dtype=int)
-    ran = extract_text(soup.find_all("span",{"class":"rp-raceInfo__value rp-raceInfo__value_black"}))[0].split()[0]
-    prize = get_prize()
+    #ran = extract_text(soup.find_all("span",{"class":"rp-raceInfo__value rp-raceInfo__value_black"}))[0].split()[0]
+    #prize = get_prize()
 
 
     with open('data/test/1.csv', 'w', encoding='utf-8') as csv:
