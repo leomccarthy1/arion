@@ -28,6 +28,7 @@ class ResultScraper(BaseRaceScraper):
         self.race_info["going"] = self.extract_text(
             self.soup.find_all("span", {"class": "rp-raceTimeCourseName_condition"})
         )[0]
+        self.race_info['rating_band'] = self.get_rating_band()
 
         # Get info for all runners
         self.runner_info["horse_name"] = self.extract_text(
@@ -141,6 +142,24 @@ class ResultScraper(BaseRaceScraper):
 
         return dist
 
+    def get_rating_band(self):
+        bands =self.extract_text(
+            self.soup.find_all("span", {"class": "rp-raceTimeCourseName_ratingBandAndAgesAllowed"})
+        )
+        bands = bands[0].split()
+
+        band_rating = ''
+
+        if len(bands) > 1:
+            for x in bands:
+                if '-' in x:
+                    band_rating = x.strip()
+        else:
+            if '-' in bands:
+                band_rating = bands.strip()
+
+        return band_rating
+
 
 if not os.path.exists("scraping/data/"):
     os.makedirs("scraping/data/")
@@ -159,6 +178,6 @@ with open(file_path, "w", encoding="utf-8") as csv:
             fields = [*race.race_info] + [*race.runner_info]
             csv.write(",".join(fields) + "\n")
             first = False
-
+        print(race.race_info['rating_band'])
         for row in race.csv_data:
             csv.write(row + "\n")

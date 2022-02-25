@@ -37,40 +37,6 @@ def get_weights():
     
     return [i + j for i,j in zip(st,lbs)]
 
-def get_distance():
-    dist = extract_text(soup.find_all("span",{"data-test-selector":"block-distanceInd"}))
-    dist = ''.join([d.strip().replace('¼', '.25').replace('½', '.5').replace('¾', '.75') for d in dist])
-
-    if 'M' in dist:
-        if len(dist) > 2:
-            dist = int(dist.split('M')[0]) * 8 + float(dist.split('M')[1].strip('F'))
-        else:
-            dist = int(dist.split('M')[0]) * 8
-    else:
-        dist = dist.strip('F')
-
-    return float(dist)
-
-def get_lengths():
-    lens = []
-    t = soup.select('script:-soup-contains("window.horseData")',type='application/ld+json')[0].text.split('=')[1].replace(";",'')
-    t = json.loads(t)
-    for i in t['items']:
-        lens.append(i['accumLengthNative'])
-    lens[0] = 0
-
-    return lens
-
-def get_prize():
-    prizes = soup.find_all("div",{"data-test-selector":'text-prizeMoney'})
-    prize = [p.get_text().split() for p in prizes][0][1::2]
-    prize = [p.strip().replace(",","").replace("£","") for p in prize]
-    try:
-        [prize.append('0') for i in range(len(pos) - len(prize))]
-    except IndexError:
-        prize = ['' for i in range(len(pos))]
-    
-    return prize
 
 
 # peds =  extract_text(soup.find_all("tr",{"data-test-selector":"block-pedigreeInfoFullResults"}))
