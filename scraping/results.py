@@ -199,7 +199,6 @@ def save_csv(file_path):
         for URL in URLS:
             try:
                 race = ResultScraper(URL)
-                print(race.runner_info['price'])
             except VoidRaceError:
                 continue
             while first:
