@@ -1,3 +1,4 @@
+from curses.ascii import isdigit
 from race import BaseRaceScraper
 import json
 import os
@@ -6,6 +7,8 @@ from re import sub
 URLS = [
     "https://www.racingpost.com/results/1353/newcastle-aw/2022-02-21/803348",
     "https://www.racingpost.com/results/393/lingfield-aw/2022-02-19/803339",
+    "https://www.racingpost.com/results/15/doncaster/2011-04-16/527084",
+    "https://www.racingpost.com/results/17/epsom/2015-06-06/626546"
 ]
 
 class VoidRaceError(Exception):
@@ -17,7 +20,6 @@ class ResultScraper(BaseRaceScraper):
         super().__init__(URL)
 
         # Get info for race condtions
-
         self.race_info["datetime"] = self.soup.find_all("main")[0].get(
             "data-analytics-race-date-time"
         )
@@ -25,7 +27,6 @@ class ResultScraper(BaseRaceScraper):
             "data-analytics-coursename"
         )
         self.race_info["distance_f"] = self.get_distance()
-        self.race_info["runners"] = self.get_num_runners()
         self.race_info["going"] = self.extract_text(
             self.soup.find_all("span", {"class": "rp-raceTimeCourseName_condition"})
         )[0]
@@ -35,6 +36,7 @@ class ResultScraper(BaseRaceScraper):
         self.runner_info["horse_name"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "link-horseName"})
         )
+        self.race_info["runners"] = self.get_num_runners()
         self.runner_info["horse_num"] = self.extract_text(
             self.soup.find_all("span", {"class": "rp-horseTable__saddleClothNo"})
         )
@@ -60,6 +62,8 @@ class ResultScraper(BaseRaceScraper):
         self.runner_info["ts"] = self.extract_text(
             self.soup.find_all("td", {"data-ending": "TS"})
         )
+        
+ 
         self.runner_info["or"] = self.extract_text(
             self.soup.find_all("td", {"data-ending": "OR"})
         )
@@ -74,12 +78,13 @@ class ResultScraper(BaseRaceScraper):
             self.soup.find_all(
                 "span", {"class": "rp-raceInfo__value rp-raceInfo__value_black"}
             )
-        )[0]
+        )
 
-        if ran is not None:
-            return ran.replace("Ran", "").strip()
+        if len(ran) > 0:
+            return ran[0].replace("Ran", "").strip()
+        else:
+            return len(self.runner_info['horse_name'])
 
-        return None
 
     def get_lengths(self):
         lens = []
@@ -92,8 +97,12 @@ class ResultScraper(BaseRaceScraper):
         )
         t = json.loads(t)
         for i in t["items"]:
-            lens.append(i["accumLengthNative"])
+            if i["accumLengthNative"] is not None:
+                lens.append(i["accumLengthNative"])
+            else:
+                lens.append('')
         lens[0] = 0
+        
 
         return lens
 

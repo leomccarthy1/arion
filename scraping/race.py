@@ -33,7 +33,9 @@ class BaseRaceScraper:
     def extract_text(
         self, html: List, skip: bool = False, dtype: Callable = str
     ) -> list:
-        if skip:
+        if html is None:
+            return ['']
+        elif skip:
             return [dtype(self.clean_strings(i.get_text())) for i in html][::2]
         else:
             return [dtype(self.clean_strings(i.get_text())) for i in html]
