@@ -1,9 +1,11 @@
-from results import ResultScraper
+from arion.scraping.results import ResultScraper
 import os
 import json
 import requests
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 from bs4 import BeautifulSoup
+from tqdm import tqdm
+from fire import Fire
 
 class VoidRaceError(Exception):
     pass
@@ -12,10 +14,6 @@ class ArionScraper:
     def __init__(self,dates:str,path:str = None, type:str = "historic") -> None:
         self.path = path
         self.dates = dates
-
-    def _courses(self):
-        pass
-
 
 
 def courses(code='gb'):
@@ -50,7 +48,7 @@ def parse_years(year_str):
     else:
         return [year_str]
 
-def get_race_urls(self, tracks, years, code):
+def get_race_urls(tracks, years, code):
     urls = set()
     courses = []
     
@@ -59,9 +57,9 @@ def get_race_urls(self, tracks, years, code):
 
     for track in tracks:
         for year in years:
-            courses.append((f'{course_url}/{track[0]}/{year}/{code}/all-races'))
+            courses.append((track,f'{course_url}/{track[0]}/{year}/{code}/all-races'))
 
-    races = [[course ,requests.get(course, headers={'User-Agent': 'Mozilla/5.0'}).json()] for course in courses]
+    races = [[course[0] ,requests.get(course[1], headers={'User-Agent': 'Mozilla/5.0'}).json()] for course in courses]
     for race in races:
         results = race[1]['data']['principleRaceResults']
         if results:
@@ -90,4 +88,35 @@ def get_race_urls_date(dates, region):
 
     return sorted(list(urls))
 
+def scrape_races(dates:str,folder:str = "data",type:str = "historic",code:str = 'flat'):
+    dates = str(dates)
+    file_path = f"{folder}/{dates.replace('/', '_')}.csv"
+    if '/' in dates:
+        dates = get_dates(dates)
+        URLS = get_race_urls_date(dates, 'gb')
+    else:
+        dates = get_dates(dates)
+        tracks = courses('gb')
+        URLS = get_race_urls(tracks=tracks,years=dates,code=code)
+    
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
+    with open(file_path, "w", encoding="utf-8") as csv:
+        first = True
+        for URL in tqdm(URLS):
+            try:
+                race = ResultScraper(URL)
+            except VoidRaceError:
+                continue
+            while first:
+                fields = [*race.race_info] + [*race.runner_info]
+                csv.write(",".join(fields) + "\n")
+                first = False
+            for row in race.csv_data:
+                csv.write(row + "\n")
+
+
+
+if __name__ == "__main__":
+    Fire(scrape_races)

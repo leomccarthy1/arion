@@ -1,15 +1,7 @@
 from curses.ascii import isdigit
-from race import BaseRaceScraper
+from .race import BaseRaceScraper
 import json
-import os
 from re import sub
-
-URLS = [
-    "https://www.racingpost.com/results/1353/newcastle-aw/2022-02-21/803348",
-    "https://www.racingpost.com/results/393/lingfield-aw/2022-02-19/803339",
-    "https://www.racingpost.com/results/15/doncaster/2011-04-16/527084",
-    "https://www.racingpost.com/results/17/epsom/2015-06-06/626546"
-]
 
 class VoidRaceError(Exception):
     pass
@@ -31,15 +23,19 @@ class ResultScraper(BaseRaceScraper):
             self.soup.find_all("span", {"class": "rp-raceTimeCourseName_condition"})
         )[0]
         self.race_info['rating_band'] = self.get_rating_band()
+        self.race_info['class'] = self.clean_numeric(self.extract_text(
+            self.soup.find_all("span", {"class": 'rp-raceTimeCourseName_class'})
+        ))[0]
 
         # Get info for all runners
+        self.runner_info["horse_num"] = self.extract_text(
+            self.soup.find_all("span", {"class": "rp-horseTable__saddleClothNo"})
+        )
         self.runner_info["horse_name"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "link-horseName"})
         )
         self.race_info["runners"] = self.get_num_runners()
-        self.runner_info["horse_num"] = self.extract_text(
-            self.soup.find_all("span", {"class": "rp-horseTable__saddleClothNo"})
-        )
+
         self.runner_info["jockey"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "link-jockeyName"}),
             skip=True,
@@ -56,20 +52,22 @@ class ResultScraper(BaseRaceScraper):
         self.runner_info["draw"] = self.extract_text(
             self.soup.find_all("sup", {"class": "rp-horseTable__pos__draw"})
         )
-        self.runner_info["rpr"] = self.extract_text(
+        self.runner_info["rpr"] = self.clean_numeric(self.extract_text(
             self.soup.find_all("td", {"data-ending": "RPR"})
-        )
-        self.runner_info["ts"] = self.extract_text(
+        ))
+        self.runner_info["ts"] = self.clean_numeric(self.extract_text(
             self.soup.find_all("td", {"data-ending": "TS"})
-        )
+        ))
         
- 
-        self.runner_info["or"] = self.extract_text(
+        self.runner_info["or"] = self.clean_numeric(self.extract_text(
             self.soup.find_all("td", {"data-ending": "OR"})
-        )
+        ))
         self.runner_info["finish_pos"] = self.get_positions()
         self.runner_info["ovr_btn"] = self.get_lengths()
         self.runner_info["prize"] = self.get_prize()
+        self.runner_info["comment"] = self.extract_text(
+            self.soup.find_all("tr", {"class": "rp-horseTable__commentRow ng-cloak"})
+        )
 
         self.csv_data = self.create_csv_data()
 
@@ -123,7 +121,10 @@ class ResultScraper(BaseRaceScraper):
 
     def get_prize(self):
         prizes = self.soup.find_all("div", {"data-test-selector": "text-prizeMoney"})
-        prize = [p.get_text().split() for p in prizes][0][1::2]
+        try:
+            prize = [p.get_text().split() for p in prizes][0][1::2]
+        except IndexError:
+            prize = ['']
         prize = [p.strip().replace(",", "").replace("£", "") for p in prize]
         pos = self.runner_info["finish_pos"]
 
@@ -158,10 +159,12 @@ class ResultScraper(BaseRaceScraper):
         return dist
 
     def get_rating_band(self):
-        bands =self.extract_text(
+        bands_age =self.extract_text(
             self.soup.find_all("span", {"class": "rp-raceTimeCourseName_ratingBandAndAgesAllowed"})
         )
-        bands = bands[0].split()
+
+
+        bands = bands_age[0].split()
 
         band_rating = ''
 
@@ -183,40 +186,3 @@ class ResultScraper(BaseRaceScraper):
         odds = [sub('(F|J|C)', '', sp) for sp in sps]
 
         return self.fraction_to_decimal(odds)
-
-    def fraction_to_decimal(self, fractions):
-        decimal = []
-        for fraction in fractions:
-            if fraction in {'', 'No Odds', '&'}:
-                decimal.append('')
-            elif fraction.lower() in {'evens', 'evs'}:
-                decimal.append('2.00')
-            else:
-                num, den = fraction.split('/')
-                decimal.append(f'{float(num) / float(den) + 1.00:.2f}')
-
-        return decimal
-
-
-
-def save_csv(file_path):
-    if not os.path.exists("scraping/data/"):
-        os.makedirs("scraping/data/")
-
-    with open(file_path, "w", encoding="utf-8") as csv:
-        first = True
-        for URL in URLS:
-            try:
-                race = ResultScraper(URL)
-            except VoidRaceError:
-                continue
-            while first:
-                fields = [*race.race_info] + [*race.runner_info]
-                csv.write(",".join(fields) + "\n")
-                first = False
-            for row in race.csv_data:
-                csv.write(row + "\n")
-
-
-
-save_csv("scraping/data/1.csv")

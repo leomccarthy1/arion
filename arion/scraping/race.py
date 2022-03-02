@@ -1,5 +1,5 @@
 from typing import Callable, List
-
+from re import sub
 import requests
 from bs4 import BeautifulSoup
 
@@ -15,25 +15,10 @@ class BaseRaceScraper:
         self.race_info['race_id'] = self.url.split('/')[7]
         self.race_info['course_id'] = self.url.split('/')[4]
 
-    def clean_strings(self, string: str) -> str:
-
-        return (
-            string.strip()
-            .replace(",", " ")
-            .replace("'", "")
-            .replace('"', "")
-            .replace(")", "")
-            .replace("(", "")
-            .title()
-            .replace(".", "")
-            .replace("\x80", "")
-            .replace("\\x80", "").replace("\xa0"," ")
-        )
-
     def extract_text(
         self, html: List, skip: bool = False, dtype: Callable = str
     ) -> list:
-        if html is None:
+        if not html:
             return ['']
         elif skip:
             return [dtype(self.clean_strings(i.get_text())) for i in html][::2]
@@ -60,3 +45,39 @@ class BaseRaceScraper:
             csv.append(csv_race_info + ','.join(str(x) for x in row))
         
         return csv
+    
+    @staticmethod
+    def fraction_to_decimal(fractions):
+        decimal = []
+        for fraction in fractions:
+            if fraction in {'', 'No Odds', '&'}:
+                decimal.append('')
+            elif 'evens' in fraction.lower() or 'evs' in fraction.lower():
+                decimal.append('2.00')
+            else:
+                num, den = fraction.split('/')
+                decimal.append(f'{float(num) / float(den) + 1.00:.2f}')
+
+        return decimal
+
+    @staticmethod
+    def clean_strings(string: str, type:str = 'str') -> str:
+       
+        return (
+            string.strip()
+            .replace(",", " ")
+            .replace("'", "")
+            .replace('"', "")
+            .replace(")", "")
+            .replace("(", "")
+            .title()
+            .replace(".", "")
+            .replace("\x80", "")
+            .replace("\\x80", "").replace("\xa0"," ").replace('\n'," ").replace('      ','').replace('\r', "")
+        )
+
+    @staticmethod
+    def clean_numeric(strings:List):
+        return [sub("[^0-9]", "", i) for i in strings]
+
+
