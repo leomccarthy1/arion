@@ -9,7 +9,7 @@ trading = betfairlightweight.APIClient(
     os.getenv("BFAIR_USERNAME"),
     os.getenv("BFAIR_PASSWORD"),
     app_key=os.getenv("BFAIR_KEY"),
-    certs="/Users/leomccarthy/Documents/arion/certs",
+    certs="../../certs",
 )
 trading.login()
 

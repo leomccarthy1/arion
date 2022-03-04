@@ -17,7 +17,7 @@ class ArionScraper:
 
 
 def courses(code='gb'):
-    courses = json.loads(open('scraping/_courses', 'r').read())
+    courses = json.loads(open('arion/scraping/_courses', 'r').read())
     for id, course in courses[code].items():
         yield id,course
 
@@ -115,7 +115,6 @@ def scrape_races(dates:str,folder:str = "data",type:str = "historic",code:str = 
                 first = False
             for row in race.csv_data:
                 csv.write(row + "\n")
-
 
 
 if __name__ == "__main__":

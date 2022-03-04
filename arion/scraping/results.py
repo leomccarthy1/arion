@@ -78,7 +78,7 @@ class ResultScraper(BaseRaceScraper):
             )
         )
 
-        if len(ran) > 0:
+        if len(ran) > 0 and ran != ['']:
             return ran[0].replace("Ran", "").strip()
         else:
             return len(self.runner_info['horse_name'])
