@@ -1,7 +1,9 @@
-from curses.ascii import isdigit
-from .race import BaseRaceScraper
 import json
+from curses.ascii import isdigit
 from re import sub
+
+from .race import BaseRaceScraper
+
 
 class VoidRaceError(Exception):
     pass
@@ -22,10 +24,12 @@ class ResultScraper(BaseRaceScraper):
         self.race_info["going"] = self.extract_text(
             self.soup.find_all("span", {"class": "rp-raceTimeCourseName_condition"})
         )[0]
-        self.race_info['rating_band'] = self.get_rating_band()
-        self.race_info['class'] = self.clean_numeric(self.extract_text(
-            self.soup.find_all("span", {"class": 'rp-raceTimeCourseName_class'})
-        ))[0]
+        self.race_info["rating_band"] = self.get_rating_band()
+        self.race_info["class"] = self.clean_numeric(
+            self.extract_text(
+                self.soup.find_all("span", {"class": "rp-raceTimeCourseName_class"})
+            )
+        )[0]
 
         # Get info for all runners
         self.runner_info["horse_num"] = self.extract_text(
@@ -45,23 +49,23 @@ class ResultScraper(BaseRaceScraper):
             skip=True,
         )
         self.runner_info["price"] = self.get_starting_prices()
-        
+
         self.runner_info["age"] = self.extract_text(
             self.soup.find_all("td", {"data-test-selector": "horse-age"})
         )
         self.runner_info["draw"] = self.extract_text(
             self.soup.find_all("sup", {"class": "rp-horseTable__pos__draw"})
         )
-        self.runner_info["rpr"] = self.clean_numeric(self.extract_text(
-            self.soup.find_all("td", {"data-ending": "RPR"})
-        ))
-        self.runner_info["ts"] = self.clean_numeric(self.extract_text(
-            self.soup.find_all("td", {"data-ending": "TS"})
-        ))
-        
-        self.runner_info["or"] = self.clean_numeric(self.extract_text(
-            self.soup.find_all("td", {"data-ending": "OR"})
-        ))
+        self.runner_info["rpr"] = self.clean_numeric(
+            self.extract_text(self.soup.find_all("td", {"data-ending": "RPR"}))
+        )
+        self.runner_info["ts"] = self.clean_numeric(
+            self.extract_text(self.soup.find_all("td", {"data-ending": "TS"}))
+        )
+
+        self.runner_info["or"] = self.clean_numeric(
+            self.extract_text(self.soup.find_all("td", {"data-ending": "OR"}))
+        )
         self.runner_info["finish_pos"] = self.get_positions()
         self.runner_info["ovr_btn"] = self.get_lengths()
         self.runner_info["prize"] = self.get_prize()
@@ -78,11 +82,10 @@ class ResultScraper(BaseRaceScraper):
             )
         )
 
-        if len(ran) > 0 and ran != ['']:
+        if len(ran) > 0 and ran != [""]:
             return ran[0].replace("Ran", "").strip()
         else:
-            return len(self.runner_info['horse_name'])
-
+            return len(self.runner_info["horse_name"])
 
     def get_lengths(self):
         lens = []
@@ -98,9 +101,8 @@ class ResultScraper(BaseRaceScraper):
             if i["accumLengthNative"] is not None:
                 lens.append(i["accumLengthNative"])
             else:
-                lens.append('')
+                lens.append("")
         lens[0] = 0
-        
 
         return lens
 
@@ -109,8 +111,8 @@ class ResultScraper(BaseRaceScraper):
             self.soup.find_all("span", {"data-test-selector": "text-horsePosition"})
         )
 
-        try:        
-            if positions[0] == 'VOI':
+        try:
+            if positions[0] == "VOI":
                 raise VoidRaceError
         except:
             print(f"Voide race {self.url}")
@@ -124,7 +126,7 @@ class ResultScraper(BaseRaceScraper):
         try:
             prize = [p.get_text().split() for p in prizes][0][1::2]
         except IndexError:
-            prize = ['']
+            prize = [""]
         prize = [p.strip().replace(",", "").replace("£", "") for p in prize]
         pos = self.runner_info["finish_pos"]
 
@@ -159,30 +161,31 @@ class ResultScraper(BaseRaceScraper):
         return dist
 
     def get_rating_band(self):
-        bands_age =self.extract_text(
-            self.soup.find_all("span", {"class": "rp-raceTimeCourseName_ratingBandAndAgesAllowed"})
+        bands_age = self.extract_text(
+            self.soup.find_all(
+                "span", {"class": "rp-raceTimeCourseName_ratingBandAndAgesAllowed"}
+            )
         )
-
 
         bands = bands_age[0].split()
 
-        band_rating = ''
+        band_rating = ""
 
         if len(bands) > 1:
             for x in bands:
-                if '-' in x:
+                if "-" in x:
                     band_rating = x.strip()
         else:
-            if '-' in bands:
+            if "-" in bands:
                 band_rating = bands.strip()
 
         return band_rating
-    
+
     def get_starting_prices(self):
         sps = self.extract_text(
             self.soup.find_all("span", {"class": "rp-horseTable__horse__price"})
         )
-        sps = [sp.replace('No Odds', '').strip() for sp in sps]
-        odds = [sub('(F|J|C)', '', sp) for sp in sps]
+        sps = [sp.replace("No Odds", "").strip() for sp in sps]
+        odds = [sub("(F|J|C)", "", sp) for sp in sps]
 
         return self.fraction_to_decimal(odds)
