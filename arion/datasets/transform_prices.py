@@ -29,6 +29,34 @@ class BetfairPrices:
         self.trading.historic.read_timeout = 300
         self.trading.historic.connect_timeout = 50
         
+    def download(self, years:List[int], output_path:str):
+        for  year in years:
+
+            if year == 2015:
+                month_start = 4
+            else:
+                month_start = 1
+            
+            file_list = self.trading.historic.get_file_list(
+                "Horse Racing",
+                "Basic Plan",
+                from_day=1,
+                from_month=month_start,
+                from_year=year,
+                to_day=31,
+                to_month=12,
+                to_year=year,
+                market_types_collection=["WIN"],
+                countries_collection=["GB"],
+                file_type_collection=["M","E"],
+            )
+
+            if not os.path.exists(f"{output_path}/{year}"):
+                os.makedirs(f"{output_path}/{year}")
+                
+            for file in tqdm(file_list):
+                self.trading.historic.download_file(file_path=file,store_directory = f"{output_path}/{year}")
+
         
     def make_prices(self,files: List[str]):
         self.trading.login()
