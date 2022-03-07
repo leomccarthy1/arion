@@ -2,11 +2,10 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold
-
-
+from typing import List
 
 class ArionModel:
-    def __init__(self) -> None:
+    def __init__(self,not_features:List[str] = None) -> None:
         self.params =  {
                         'boost_from_average':False,
                         'num_leaves': 64,
@@ -36,9 +35,11 @@ class ArionModel:
                     'min_data_in_leaf': 3000,
                     'force_col_wise':True
                     }
+        self.not_features = not_features
+
 
     def get_oof(self,train = pd.DataFrame):
-        y = train['won']
+        y = train['finish_pos']
 
         skf = StratifiedKFold(n_splits=4)
         oof = np.zeros(len(train))
@@ -52,8 +53,8 @@ class ArionModel:
             q_train = X_train["race_id"].value_counts()[X_train["race_id"].unique()]
             q_val = X_val["race_id"].value_counts()[X_val["race_id"].unique()]
 
-            X_train = X_train.drop(columns=['race_id'])
-            X_val = X_val.drop(columns=['race_id'])
+            X_train = X_train.drop(columns=self.not_features)
+            X_val = X_val.drop(columns=self.not_features)
 
             dtrain = lgb.Dataset(X_train,label = y_train_rank,free_raw_data=False,
                                     group = q_train)
@@ -77,7 +78,7 @@ class ArionModel:
         y_rank = train['finish_pos']
         y = train['won']
 
-        dtrain = lgb.Dataset(train.drop(columns='race_id'),label = y_rank,free_raw_data=False,
+        dtrain = lgb.Dataset(train.drop(columns=self.not_features),label = y_rank,free_raw_data=False,
                             group = q_train)
 
         
@@ -89,16 +90,19 @@ class ArionModel:
         train["rank"] = self.get_oof(train)
         train["prob"] = train[["race_id","rank"]].groupby("race_id")["rank"].apply(lambda x: np.exp(x)/sum(np.exp(x)))
 
-        dtrain = lgb.Dataset(train.drop(columns='race_id'),label = y,free_raw_data=False)
+        dtrain = lgb.Dataset(train.drop(columns=self.not_features),label = y,free_raw_data=False)
 
         self.lgbst = lgb.train(train_set = dtrain,params = self.params,
                      num_boost_round=400)
 
-    def predict(self,test:pd.DataFrame):
-        test["rank"] = -self.lgbst_rank.predict(test.drop(columns='race_id'))
+        return self
+
+    def predict(self, X:pd.DataFrame):
+        test = X.copy()
+        test["rank"] = -self.lgbst_rank.predict(test.drop(columns=self.not_features))
         test["prob"] = test[["race_id","rank"]].groupby("race_id")["rank"].apply(lambda x: np.exp(x)/sum(np.exp(x)))
 
-        probs = self.lgbst.predict(test.drop(columns='race_id'))
+        probs = self.lgbst.predict(test.drop(columns=self.not_features))
 
         self.probs = probs
 
