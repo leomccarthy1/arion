@@ -10,6 +10,7 @@ class RaceDataTransformer:
     def clean(self, df: pd.DataFrame) -> pd.DataFrame:
         df['datetime'] = pd.to_datetime(df['datetime'], utc=True)
         df = df.sort_values(by = 'datetime')
+        df.insert(2,'date',df['datetime'].dt.date)
 
         df['rating_band'] = df['rating_band'].fillna('none_handicap')
 

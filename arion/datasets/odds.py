@@ -10,9 +10,8 @@ import smart_open
 from betfairlightweight import StreamListener
 from dotenv import load_dotenv
 from fire import Fire
-from smart_open import smart_open
+import smart_open
 from tqdm import tqdm
-
 
 class BetfairPrices:
     def __init__(self) -> None:
@@ -21,7 +20,7 @@ class BetfairPrices:
             os.getenv("BFAIR_USERNAME"),
             os.getenv("BFAIR_PASSWORD"),
             app_key=os.getenv("BFAIR_KEY"),
-            certs="../../certs",
+            certs="arion/certs",
         )
 
         self.listener = StreamListener(max_latency=None)
@@ -129,15 +128,18 @@ class BetfairPrices:
 
 
 def main(
-    input_folder: str = "data/odds/betfair/2015",
-    output_path: str = "data/odds/two_hour/2015.csv",
+    years: List[str],
+    mode: str = "transform",
+    input_folder: str = "data/odds/betfair",
+    output_folder: str = "data/odds/two_hour",
 ):
     streamer = BetfairPrices()
-    files = [f"{input_folder}/{file}" for file in os.listdir(input_folder)]
 
-    out = streamer.make_prices(files)
-
-    out.to_csv(output_path, index=False)
+    if mode == 'transform':
+        for year in years:
+            files = [f"{input_folder}/{year}/{file}" for file in os.listdir(f"{input_folder}/{year}")]
+            out = streamer.make_prices(files)
+            out.to_csv(f"{output_folder}/{year}.csv", index=False)
 
 
 if __name__ == "__main__":
