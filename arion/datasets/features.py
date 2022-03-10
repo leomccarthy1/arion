@@ -1,10 +1,6 @@
-from ast import parse
-from distutils.command.clean import clean
-from xml.dom.minidom import Entity
-from matplotlib.pyplot import text
 import pandas as pd
 import os
-from arion.datasets.transform import RaceDataTransformer
+from arion.datasets import clean
 import numpy as np
 from typing import List
 
@@ -140,99 +136,82 @@ def add_betfair_prices(df: pd.DataFrame, odds: pd.DataFrame):
     return df
 
 
-filepaths = [f for f in os.listdir("data/results") if f.endswith(".csv")]
-results = pd.concat(
-    [
-        pd.read_csv(
-            f"data/results/{i}",
-            lineterminator="\n",
-            parse_dates=["datetime"],
-            infer_datetime_format=True,
-        )
-        for i in filepaths
-    ],
-    ignore_index=True,
-)
-transformer = RaceDataTransformer()
-cleaned = transformer.clean(results)
+def make_features(df_race:pd.DataFrame, prices:pd.DataFrame):
 
-cleaned["won"] = np.where(cleaned["finish_pos"] == 1, 1, 0)
+    df_race["won"] = np.where(df_race["finish_pos"] == 1, 1, 0)
+    
+    df_race = draw_fts(df_race)
+    df_race["placed"] = np.where(
+        df_race["finish_pos"] <= np.ceil(df_race["runners"] * 0.3), 1, 0
+    )
+    df_race["pct_beaten"] = (df_race["runners"] - df_race["finish_pos"]) / (
+        df_race["runners"] - 1
+    )
+    df_race["days_since_last"] = (
+        (df_race["datetime"] - (df_race.groupby("horse_name")["datetime"].shift(1))).dt.days
+    ).fillna(0)
+    df_race["month"] = df_race["datetime"].dt.month
 
+    # df_race = text_features(df_race)
+    df_race = make_rating_stats(df_race)
+    df_race = exponentials(
+        df_race,
+        groups=make_groups(["trainer"])
+        + make_groups(["jockey"])
+        + make_groups(["trainer", "jockey"]),
+        features=["prize", "ovr_btn", "won", "placed", "pct_beaten"],
+        halflife=6,
+    )
+    df_race = exponentials(
+        df_race,
+        groups=make_groups(["horse_name"]),
+        features=[
+            "prize",
+            "ovr_btn",
+            "won",
+            "placed",
+            "rpr",
+            "or",
+            "ts",
+            "pct_beaten"
+        ],
+        halflife=2,
+    )
+    df_race = last_race(df_race)
 
-df_race = draw_fts(cleaned)
-df_race["placed"] = np.where(
-    df_race["finish_pos"] <= np.ceil(df_race["runners"] * 0.3), 1, 0
-)
-df_race["pct_beaten"] = (df_race["runners"] - df_race["finish_pos"]) / (
-    df_race["runners"] - 1
-)
-df_race["days_since_last"] = (
-    (df_race["datetime"] - (df_race.groupby("horse_name")["datetime"].shift(1))).dt.days
-).fillna(0)
-df_race["month"] = df_race["datetime"].dt.month
+    df_race = add_betfair_prices(df_race, odds=prices)
 
-# df_race = text_features(df_race)
-df_race = make_rating_stats(df_race)
-df_race = exponentials(
-    df_race,
-    groups=make_groups(["trainer"])
-    + make_groups(["jockey"])
-    + make_groups(["trainer", "jockey"]),
-    features=["prize", "ovr_btn", "won", "placed", "pct_beaten"],
-    halflife=6,
-)
-df_race = exponentials(
-    df_race,
-    groups=make_groups(["horse_name"]),
-    features=[
-        "prize",
+    drop = [
+        "course_id",
+        "course",
+        "jockey",
+        "trainer",
         "ovr_btn",
-        "won",
+        "prize",
+        "comment",
         "placed",
-        "rpr",
-        "or",
+        "horse_num",
         "ts",
+        "rpr",
         "pct_beaten"
-    ],
-    halflife=2,
-)
-df_race = last_race(df_race)
+    ]
+    df_race = df_race.drop(columns=drop)
+
+    dont_std = [
+        "race_id",
+        "date",
+        "datetime",
+        "finish_pos",
+        "won",
+        "class",
+        "price",
+        "last_price",
+        "distance_f",
+    ]
+    df_race = recode(df_race, rm=dont_std)
+    df_race = race_std(df_race, rm=dont_std)
+
+    return df_race
 
 
-pricefiles = [f for f in os.listdir(f"data/odds/two_hour") if f.endswith(".csv")]
-prices = pd.concat(
-    [pd.read_csv(f"data/odds/two_hour/{i}", parse_dates=["time"]) for i in pricefiles]
-)
-df_race = add_betfair_prices(df_race, odds=prices)
 
-drop = [
-    "course_id",
-    "course",
-    "jockey",
-    "trainer",
-    "ovr_btn",
-    "prize",
-    "comment",
-    "placed",
-    "horse_num",
-    "ts",
-    "rpr",
-    "pct_beaten"
-]
-df_race = df_race.drop(columns=drop)
-
-dont_std = [
-    "race_id",
-    "date",
-    "datetime",
-    "finish_pos",
-    "won",
-    "class",
-    "price",
-    "last_price",
-    "distance_f",
-]
-df_race = recode(df_race, rm=dont_std)
-df_race = race_std(df_race, rm=dont_std)
-
-df_race.to_csv("data/processed.csv", index=False)
