@@ -1,5 +1,4 @@
 import json
-from curses.ascii import isdigit
 from re import sub
 
 from .race import BaseRaceScraper
