@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -8,7 +8,7 @@ from fire import Fire
 from tqdm import tqdm
 
 from arion.scraping.results import ResultScraper
-
+from arion.scraping.racecard import RacecardScraper
 
 class VoidRaceError(Exception):
     pass
@@ -133,3 +133,48 @@ def scrape_races(
             for row in race.csv_data:
                 csv.write(row + "\n")
 
+
+
+def get_urls_racecard(dates:str, region:str = 'gb'):
+    cards_page = requests.get(f"https://www.racingpost.com/racecards/{dates}", headers={"User-Agent": "Mozilla/5.0"})
+
+    soup = BeautifulSoup(cards_page.content, "html.parser")
+    race_links = soup.find_all(
+            "a", {"class": "RC-meetingItem__link js-navigate-url"}, href=True
+        )
+
+    course_ids = {course[0] for course in courses(region)}
+    urls = set()
+
+    for race in race_links:
+        if race["href"].split("/")[2] in course_ids:
+            urls.add("https://www.racingpost.com" + race["href"])
+
+    return sorted(list(urls))
+    
+
+
+def scrape_racecard(day:str = 'today', folder:str = 'data/racecards/raw'):
+
+    if day == 'today':
+        dates = datetime.today().strftime("%Y-%m-%d")
+    URLS = get_urls_racecard(dates, "gb")
+    file_path = f"{folder}/{dates.replace('-','_')}.csv"
+
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    with open(file_path, "w", encoding="utf-8") as csv:
+        first = True
+        for URL in tqdm(URLS):
+            try:
+                card_scraper = RacecardScraper(URL)
+                race  = card_scraper.scrape_race()
+            except VoidRaceError:
+                continue
+            while first:
+                fields = [*race.race_info] + [*race.runner_info]
+                csv.write(",".join(fields) + "\n")
+                first = False
+            for row in race.csv_data:
+                csv.write(row + "\n")

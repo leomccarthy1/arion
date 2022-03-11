@@ -136,9 +136,9 @@ def add_betfair_prices(df: pd.DataFrame, odds: pd.DataFrame):
     return df
 
 
-def make_features(df_race:pd.DataFrame, prices:pd.DataFrame):
-
+def make_features(df_race:pd.DataFrame, prices:pd.DataFrame = None):
     df_race["won"] = np.where(df_race["finish_pos"] == 1, 1, 0)
+
     
     df_race = draw_fts(df_race)
     df_race["placed"] = np.where(
@@ -152,7 +152,7 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame):
     ).fillna(0)
     df_race["month"] = df_race["datetime"].dt.month
 
-    # df_race = text_features(df_race)
+
     df_race = make_rating_stats(df_race)
     df_race = exponentials(
         df_race,
@@ -178,8 +178,11 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame):
         halflife=2,
     )
     df_race = last_race(df_race)
-
-    df_race = add_betfair_prices(df_race, odds=prices)
+    
+    if prices is not None:
+        df_race = add_betfair_prices(df_race, odds=prices)
+    else:
+        df_race['last_price'] = df_race['price']
 
     drop = [
         "course_id",
@@ -199,6 +202,7 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame):
 
     dont_std = [
         "race_id",
+        "horse_name"
         "date",
         "datetime",
         "finish_pos",

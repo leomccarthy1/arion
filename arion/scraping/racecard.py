@@ -1,4 +1,5 @@
-from race import BaseRaceScraper
+from .race import BaseRaceScraper
+from re import sub
 
 class RacecardScraper(BaseRaceScraper):
     def __init__(self, URL: str = None):
@@ -49,6 +50,7 @@ class RacecardScraper(BaseRaceScraper):
         return band_rating
 
 
+
     def scrape_race(self):
         #Race info
         self.race_info["datetime"] = self.soup.find_all("section")[0].get(
@@ -80,7 +82,7 @@ class RacecardScraper(BaseRaceScraper):
             self.soup.find_all("a", {"data-test-selector": "RC-cardPage-runnerName"})
         )
 
-        self.race_info["runners"] = len([r for r in self.runner_info["horse_num"] if r != 'NR'])
+        self.race_info["runners"] = len([r for r in self.runner_info["horse_num"] if r not in ['NR','Nr']])
 
         self.runner_info["jockey"] = self.extract_text(
             self.soup.find_all("a", {"data-test-selector": "RC-cardPage-runnerJockey-name"})
@@ -91,7 +93,7 @@ class RacecardScraper(BaseRaceScraper):
 
         ran = len(self.runner_info['horse_name'])
 
-        self.runner_info["price"] = [""] * ran
+        self.runner_info["price"] = ["0"] * ran
 
 
         self.runner_info["age"] = self.extract_text(
@@ -111,8 +113,6 @@ class RacecardScraper(BaseRaceScraper):
             self.extract_text(self.soup.find_all("span",{"data-test-selector":"RC-cardPage-runnerOr"}))
         )
 
-
-        self.runner_info["finish_pos"] =[""] * ran
         self.runner_info["finish_pos"]= [""] * ran
         self.runner_info["ovr_btn"] = [""]* ran
         self.runner_info["prize"] = [""]* ran
@@ -121,16 +121,3 @@ class RacecardScraper(BaseRaceScraper):
         self.csv_data = self.create_csv_data()
 
         return self
-
-
-url = "https://www.racingpost.com/racecards/1353/newcastle-aw/2022-03-10/804339/"
-
-scraper = RacecardScraper(url)
-race = scraper.scrape_race()
-
-with open('racecard_test.csv', "w", encoding="utf-8") as csv:
-    fields = [*race.race_info] + [*race.runner_info]
-    csv.write(",".join(fields) + "\n")
-    first = False
-    for row in race.csv_data:
-        csv.write(row + "\n")
