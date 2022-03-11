@@ -202,7 +202,7 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame = None):
 
     dont_std = [
         "race_id",
-        "horse_name"
+        "horse_name",
         "date",
         "datetime",
         "finish_pos",

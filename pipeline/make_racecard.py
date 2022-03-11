@@ -2,7 +2,7 @@ from arion.scraping import scraper
 from arion.datasets import features, clean
 import pandas as pd
 from datetime import datetime, timedelta, date
-from io import StringIO, BytesIO
+from fire import Fire
 
 def update(df:pd.DataFrame):
     need_from = (df["date"].max() - timedelta(3)).strftime('%Y/%m/%d')
@@ -12,7 +12,7 @@ def update(df:pd.DataFrame):
     print('Adding reults for ' + dateRange)
 
     folder = "data/results/updates"
-    scraper.scrape_races(dateRange, folder = folder)
+    # scraper.scrape_races(dateRange, folder = folder)
 
     to_add = pd.read_csv(f"{folder}/{dateRange.replace('/', '_')}.csv", lineterminator='\n', parse_dates=['datetime'])
     
@@ -25,7 +25,6 @@ def update(df:pd.DataFrame):
 
 def main(scrape_card:bool = True, update_results:bool = True):
     results = pd.read_csv('data/results/processed/results_clean.csv', lineterminator='\n', parse_dates=['datetime','date'])
-    print(results['date'])
     if update_results:
         results = update(results)
 
@@ -37,8 +36,6 @@ def main(scrape_card:bool = True, update_results:bool = True):
     card = card.loc[~card['draw'].isna()]
     card = clean.clean_data(card)
 
-    print(card['date'])
-
     combined = pd.concat([results,card],ignore_index=True).sort_values(by='datetime')
 
     processed = features.make_features(combined)
@@ -46,6 +43,6 @@ def main(scrape_card:bool = True, update_results:bool = True):
     processed_card.to_csv(f"data/racecards/processed/{day}.csv", index = False)
 
 
-main(scrape_card=False, update_results=True)
-
+if __name__ == "__main__":
+    Fire(main)
     
