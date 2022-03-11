@@ -84,7 +84,7 @@ class ArionModel:
         
         self.lgbst_rank = lgb.train(self.rank_params,
                             dtrain,
-                            num_boost_round=200
+                            num_boost_round=250
                         )
 
         train["rank"] = self.get_oof(train)
@@ -93,7 +93,7 @@ class ArionModel:
         dtrain = lgb.Dataset(train.drop(columns=self.not_features),label = y,free_raw_data=False)
 
         self.lgbst = lgb.train(train_set = dtrain,params = self.params,
-                     num_boost_round=400)
+                     num_boost_round=600)
 
         return self
 
@@ -108,6 +108,14 @@ class ArionModel:
 
         return probs
 
-
-
-
+    def make_bets(self,X:pd.DataFrame,kelly:float = 0.04, prob_min:float = 0.2, balance:int = 500):
+        out = X[["date","horse_name","last_price"]].copy()
+        try:
+            out["model_prob"] = self.probs
+        except AttributeError:
+            out["model_prob"] = self.predict(X)
+        out["kelly"] = ((out["model_prob"]*out["last_price"]) - 1)/(out["last_price"] - 1)
+        out["bet"] = (out["model_prob"] > prob_min) & (out["kelly"] > kelly)
+        out["bet_size"] = round(out["bet"]*out["kelly"]*balance,2)
+        
+        return out

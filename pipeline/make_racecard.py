@@ -39,7 +39,7 @@ def main(scrape_card:bool = True, update_results:bool = True):
     combined = pd.concat([results,card],ignore_index=True).sort_values(by='datetime')
 
     processed = features.make_features(combined)
-    processed_card = processed.loc[processed['date'] == date.today()]
+    processed_card = processed.loc[processed['date'] == day.replace("_","-")]
     processed_card.to_csv(f"data/racecards/processed/{day}.csv", index = False)
 
 
