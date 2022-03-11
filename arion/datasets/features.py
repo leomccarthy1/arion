@@ -114,7 +114,7 @@ def clean_strings(string: str, type: str = "str") -> str:
 
 def add_betfair_prices(df: pd.DataFrame, odds: pd.DataFrame):
 
-    odds["date"] = odds["time"].dt.date
+    odds["date"] = odds["time"].dt.date.astype('datetime64')
 
     odds.rename(columns={"selection_name": "horse_name"}, inplace=True)
     odds["horse_name"] = [clean_strings(i) for i in odds["horse_name"]]
