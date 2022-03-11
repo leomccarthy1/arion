@@ -131,7 +131,7 @@ dmypy.json
 # Data
 data/
 *.csv
-
+artifacts/
 #Vscode
 .vscode/
 
