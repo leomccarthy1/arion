@@ -44,7 +44,7 @@ class ArionModel:
         skf = StratifiedKFold(n_splits=4)
         oof = np.zeros(len(train))
 
-        callbacks = [lgb.early_stopping(40, verbose=0), lgb.log_evaluation(period=0)]
+        callbacks = [lgb.log_evaluation(period=0)]
 
         for train_index, test_index in skf.split(train,y):
             X_train, X_val = train.iloc[train_index], train.iloc[test_index]
@@ -64,7 +64,7 @@ class ArionModel:
             model = lgb.train(self.rank_params,
                             dtrain,
                             valid_sets=[dtrain, dval],
-                            num_boost_round=200,
+                            num_boost_round=250,
                             callbacks = callbacks
                         )
             
@@ -93,16 +93,15 @@ class ArionModel:
         dtrain = lgb.Dataset(train.drop(columns=self.not_features),label = y,free_raw_data=False)
 
         self.lgbst = lgb.train(train_set = dtrain,params = self.params,
-                     num_boost_round=600)
+                     num_boost_round=650)
 
         return self
 
     def predict(self, X:pd.DataFrame):
         test = X.copy()
-        test["rank"] = -self.lgbst_rank.predict(test.drop(columns=self.not_features))
+        test["rank"] = -self.lgbst_rank.predict(test.drop(columns=self.not_features)[self.lgbst_rank.feature_name()])
         test["prob"] = test[["race_id","rank"]].groupby("race_id")["rank"].apply(lambda x: np.exp(x)/sum(np.exp(x)))
-
-        probs = self.lgbst.predict(test.drop(columns=self.not_features))
+        probs = self.lgbst.predict(test.drop(columns=self.not_features)[self.lgbst.feature_name()])
 
         self.probs = probs
 
