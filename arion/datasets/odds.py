@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from typing import List
 from unittest.mock import patch
-
+from datetime import datetime
 import betfairlightweight
 import numpy as np
 import pandas as pd
@@ -23,6 +23,7 @@ class BetfairPrices:
             certs="arion/certs",
         )
 
+
         self.listener = StreamListener(max_latency=None)
 
         self.trading.historic.read_timeout = 300
@@ -35,19 +36,24 @@ class BetfairPrices:
                 month_start = 4
             else:
                 month_start = 1
-
+            if year == 2022:
+                month_end = datetime.now().month - 1
+            else:
+                month_end = 12
+            
+            self.trading.login()
             file_list = self.trading.historic.get_file_list(
                 "Horse Racing",
                 "Basic Plan",
                 from_day=1,
                 from_month=month_start,
                 from_year=year,
-                to_day=31,
-                to_month=12,
+                to_day=28,
+                to_month=month_end,
                 to_year=year,
                 market_types_collection=["WIN"],
                 countries_collection=["GB"],
-                file_type_collection=["M", "E"],
+                file_type_collection=["M"],
             )
 
             if not os.path.exists(f"{output_path}/{year}"):
@@ -111,7 +117,7 @@ class BetfairPrices:
                 prices.sort_values(by="time", inplace=True)
                 match = np.searchsorted(
                     prices.time,
-                    market_book.market_definition.market_time - timedelta(hours=2),
+                    market_book.market_definition.market_time - timedelta(hours=3),
                 )
                 if match == 0:
                     match = 1
@@ -128,16 +134,19 @@ class BetfairPrices:
 
 
 def main(
-    years: List[str],
+    years: List[int],
     mode: str = "transform",
-    input_folder: str = "data/odds/betfair",
-    output_folder: str = "data/odds/two_hour",
+    download_folder: str = "data/odds/betfair",
+    output_folder: str = "data/odds/three_hour",
 ):
     streamer = BetfairPrices()
 
+    if mode == "download":
+        streamer.download(years, output_path=download_folder)
+
     if mode == 'transform':
         for year in years:
-            files = [f"{input_folder}/{year}/{file}" for file in os.listdir(f"{input_folder}/{year}")]
+            files = [f"{download_folder}/{year}/{file}" for file in os.listdir(f"{download_folder}/{year}")]
             out = streamer.make_prices(files)
             out.to_csv(f"{output_folder}/{year}.csv", index=False)
 
