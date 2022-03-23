@@ -5,14 +5,14 @@ from datetime import datetime, timedelta, date
 from fire import Fire
 
 def update(df:pd.DataFrame):
-    need_from = (df["date"].max() - timedelta(3)).strftime('%Y/%m/%d')
+    need_from = (df["date"].max() + timedelta(1)).strftime('%Y/%m/%d')
     recent = (datetime.now() - timedelta(1)).strftime('%Y/%m/%d')
     
     dateRange = need_from +'-'+recent
     print('Adding reults for ' + dateRange)
 
     folder = "data/results/updates"
-    # scraper.scrape_races(dateRange, folder = folder)
+    scraper.scrape_races(dateRange, folder = folder)
 
     to_add = pd.read_csv(f"{folder}/{dateRange.replace('/', '_')}.csv", lineterminator='\n', parse_dates=['datetime'])
     
