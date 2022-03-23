@@ -14,6 +14,6 @@
 
 Simulated profit on last years flat horse racing data (held out from training and tunning).Bets are placed using the kelly criterion relative to a static starting bank of £1000. Different minimum predicted winning probibilities and minmum kelly value thresholds are shown. 
 
-Best ROI is 15% from 3690 bets which is a 56x return on initial balance.
+Best ROI with 5% BF commision accounted for is 15% from 3690 bets which is a 56x return on initial balance. 
 
 ![Simulated](notebooks/simulation.png?raw=true "Title")
