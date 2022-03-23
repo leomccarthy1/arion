@@ -1,15 +1,9 @@
 import os
 
 import betfairlightweight
-from betfairlightweight.filters import (streaming_market_data_filter,
-                                        streaming_market_filter)
-from betfairlightweight.resources import MarketCatalogue
+from betfairlightweight.filters import streaming_market_filter
 from dotenv import load_dotenv
 from flumine import Flumine, clients
-import pandas as pd
-from flumine.markets.middleware import Middleware
-import pickle
-from datetime import datetime
 from arion.bots.strategy import BetPlacer
 
 load_dotenv()
@@ -22,16 +16,17 @@ trading = betfairlightweight.APIClient(
     certs="arion/certs",
 )
 trading.betting.read_timeout = 30
+trading.login()
 client = clients.BetfairClient(trading, paper_trade=True)
 framework = Flumine(client=client)
-strategy = BetPlacer(
+strategy =  BetPlacer(
     market_filter=streaming_market_filter(
         event_type_ids=["7"],
         country_codes=["GB"],
         market_types=["WIN"],
-    )
+    ),
+    max_selection_exposure=105
 )
-strategy.max_order_exposure = 20
 framework.add_strategy(strategy)
 
 framework.run()
