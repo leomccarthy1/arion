@@ -115,6 +115,6 @@ class ArionModel:
             out["model_prob"] = self.predict(X)
         out["kelly"] = ((out["model_prob"]*out["last_price"]) - 1)/(out["last_price"] - 1)
         out["bet"] = (out["model_prob"] > prob_min) & (out["kelly"] > kelly)
-        out["bet_size"] = round(out["bet"]*out["kelly"]*balance,2)
+        out["bet_size"] = round(out["bet"]*out["kelly"]*balance,1)
         
         return out

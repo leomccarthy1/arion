@@ -4,7 +4,7 @@ import pickle
 
 def main():
     train = pd.read_csv('data/results/processed/results_processed.csv', parse_dates=['date','datetime'])
-    train = train.loc[train['date'] < '2021-01-01']
+    # train = train.loc[train['date'] < '2021-01-01']
     not_features = ['race_id','date','datetime','won','price','horse_name','finish_pos']
     model = ArionModel()
 

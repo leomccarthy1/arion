@@ -5,9 +5,7 @@ from betfairlightweight.filters import streaming_market_filter
 from dotenv import load_dotenv
 from flumine import Flumine, clients
 from arion.bots.strategy import BetPlacer
-
 load_dotenv()
-
 
 trading = betfairlightweight.APIClient(
     os.getenv("BFAIR_USERNAME"),
@@ -15,7 +13,6 @@ trading = betfairlightweight.APIClient(
     app_key=os.getenv("BFAIR_KEY"),
     certs="arion/certs",
 )
-trading.betting.read_timeout = 30
 trading.login()
 client = clients.BetfairClient(trading, paper_trade=True)
 framework = Flumine(client=client)
@@ -25,7 +22,8 @@ strategy =  BetPlacer(
         country_codes=["GB"],
         market_types=["WIN"],
     ),
-    max_selection_exposure=105
+    max_selection_exposure=50,
+    max_order_exposure=50
 )
 framework.add_strategy(strategy)
 

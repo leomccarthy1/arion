@@ -17,7 +17,7 @@ class BetPlacer(BaseStrategy):
         time_to_off = market_book.market_definition.market_time - datetime.now()
         if (
             market_book.status == "OPEN"
-            and market_book.market_definition.race_type != "Flat"
+            and market_book.market_definition.race_type == "Flat"
             and time_to_off < timedelta(hours=6)
             and not market_book.inplay
         ):
@@ -28,9 +28,9 @@ class BetPlacer(BaseStrategy):
             market_book.market_definition.venue,
             market_book.market_definition.market_time,
         )
-        # model = pickle.load(open( "artifacts/trained_model.pkl", "rb"))
-        # racecard = pd.read_csv(f'data/racecards/processed/{datetime.today().strftime("%Y_%m_%d")}.csv')
-        # racecard.drop(columns = 'last_price', inplace = True)
+        model = pickle.load(open( "artifacts/trained_model.pkl", "rb"))
+        racecard = pd.read_csv(f'data/racecards/processed/{datetime.today().strftime("%Y_%m_%d")}.csv')
+        racecard.drop(columns = 'last_price', inplace = True)
         prices = pd.DataFrame(
             [
                 {
@@ -42,11 +42,6 @@ class BetPlacer(BaseStrategy):
                 if r.status == "ACTIVE"
             ]
         )
-        for runner in market_book.runners:
-            runner_context = self.get_runner_context(
-                market.market_id, runner.selection_id, runner.handicap
-            )
-
         names = pd.DataFrame(
             [
                 {
@@ -57,23 +52,23 @@ class BetPlacer(BaseStrategy):
             ]
         )
         details = prices.merge(names, on="selection_id")
-        bets = details.loc[details["last_price"] == min(details["last_price"])]
-        # card = racecard.merge(details[['horse_name','last_price']], on = 'horse_name')
-        # card = card.loc[card['last_price'] != 0]
-        # preds = model.make_bets(card)
-        # bets = preds.merge(names, on = 'horse_name')
-        # bets = bets.loc[bets['bet'] == True,]
+        # bets = details.loc[details["last_price"] == min(details["last_price"])]
+        card = racecard.merge(details[['horse_name','last_price']], on = 'horse_name')
+        card = card.loc[card['last_price'] != 0]
+        preds = model.make_bets(card,balance = 100)
+        bets = preds.merge(names, on = 'horse_name')
+        print(f"book={sum(bets['model_prob'])}")
+        print(bets)
+        bets = bets.loc[bets['bet'] == True,]
 
         for runner in market_book.runners:
             if runner.selection_id in list(bets["selection_id"]):
                 runner_context = self.get_runner_context(
                     market.market_id, runner.selection_id, runner.handicap
                 )
-                print(runner_context.trade_count)
-
                 if runner_context.trade_count == 0:
                     # lay at current best back price
-                    price = get_price(runner.ex.available_to_back, 1)
+                    price = get_price(runner.ex.available_to_back,1)
                     # create trade
                     trade = Trade(
                         market_book.market_id,
@@ -81,40 +76,67 @@ class BetPlacer(BaseStrategy):
                         runner.handicap,
                         self,
                     )
-                    # size = bets.loc[bets['selection_id'] == runner.selection_id,"bet_size"][0]
-                    print(bets)
-                    name =  bets.loc[bets['selection_id'] == runner.selection_id,"horse_name"][0]
+                    selection = bets.loc[bets['selection_id'] == runner.selection_id,]
                     # create order
                     order = trade.create_order(
                         side="BACK",
-                        order_type=LimitOrder(price, 1),
-                        notes={"horse_name":name,"bet_size":1}
+                        order_type=LimitOrder(price, selection['bet_size'].values[0]),
+                        notes={"horse_name":selection['horse_name'].values[0]}
                     )
                     # place order for execution
-                    print(order.json())
                     market.place_order(order)
 
-                    with open('bets.csv', 'w', encoding='UTF8', newline='') as f:
+                    with open('data/bets/bets_placed.csv', 'a', encoding='UTF8') as f:
                         writer = csv.writer(f)
-                        writer.writerow([order.notes["horse_name"],
+                        # writer.writerow(['time_placed',
+                        #                 'race_time',
+                        #                 'horse_name',
+                        #                 'selection_id',
+                        #                 'market_id',
+                        #                 'price',
+                        #                 'size'])
+                        writer.writerow([order.date_time_created,
+                                        market_book.market_definition.market_time,
+                                        order.notes["horse_name"],
                                         order.selection_id,
                                         order.market_id,
-                                        order.average_price_matched,
-                                        order.notes["bet_size"],
-                                        order.size_matched,
-                                        order.date_time_created])
+                                        order.order_type.price,
+                                        order.order_type.size])
 
 
     def process_orders(self, market, orders):
         # kill order if unmatched in market for greater than 2 seconds
         for order in orders:
             if order.status == OrderStatus.EXECUTABLE:
-                if order.elapsed_seconds and order.elapsed_seconds > 2:
+                if order.elapsed_seconds and order.elapsed_seconds > 60:
                     market.cancel_order(order)
 
     def process_closed_market(self, market, market_book) -> None:
         for order in market.blotter:
-            print(order.cleared_order.profit, order.selection_id,order.market_id,order.notes["horse_name"],order.size_matched)
+            if order.size_matched >= 0:
+                with open('data/bets/bets_cleared.csv', 'a', encoding='UTF8') as f:
+                            writer = csv.writer(f)
+                            # writer.writerow(['placed time',
+                            #                 'race_time',
+                            #                 'horse_name',
+                            #                 'selection_id',
+                            #                 'market_id',
+                            #                 'price',
+                            #                 'price_matched',
+                            #                 'size',
+                            #                 'size_matched',
+                            #                 'profit'])
+                            writer.writerow([order.date_time_created,
+                                            market_book.market_definition.market_time,
+                                            order.notes["horse_name"],
+                                            order.selection_id,
+                                            order.market_id,
+                                            order.order_type.price,
+                                            order.average_price_matched,
+                                            order.order_type.size,
+                                            order.size_matched,
+                                            order.simulated.profit])
+
 
 
 def clean_strings(string: str, type: str = "str") -> str:
