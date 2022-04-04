@@ -29,7 +29,7 @@ Aprprox 400ish features extracted from raw results data.
 
 Some examples are:
 
-- exponentially weighted mean of Horse, Trainer and Jockey prize money
+- Exponentially weighted mean of Horse, Trainer and Jockey prize money
 - Horses SR on todays going conditions
 - Trainer places at track 
 - The avergace percentage of opponents beaten per race over a horse lifetime
@@ -53,7 +53,7 @@ A high level overview of the bet execution process is as follows
 - Daily racecards (race data) scraped
 - Features engeneiered 
 - Stream live market data using [flumine](https://github.com/betcode-org/flumine)
-- Predict win probibilities using trained models, extracted features and live betfair prices
+- Predict win probabilities using trained models, extracted features and live betfair prices
 - Place bets based on [kelly citerion](https://en.wikipedia.org/wiki/Kelly_criterion) in sitations were the predicted probiility is grrater than the current odds suggest
 - Track bets placed and cleared orders
 
