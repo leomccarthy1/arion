@@ -28,12 +28,13 @@ Best ROI with 5% BF commision accounted for is 15% from 3690 bets which is a 56x
 Aprprox 400ish features extracted from raw results data.
 
 Some examples are:
-    - exponentially weighted mean of Horse, Trainer and Jockey prize money
-    - Horses SR on todays going conditions
-    - Trainer places at track 
-    - The avergace percentage of opponents beaten per race over a horse lifetime
-    - Ratings i.e racing post, official rating, speed rating etc
-    - Many more......
+
+- exponentially weighted mean of Horse, Trainer and Jockey prize money
+- Horses SR on todays going conditions
+- Trainer places at track 
+- The avergace percentage of opponents beaten per race over a horse lifetime
+- Ratings i.e racing post, official rating, speed rating etc
+- Many more......
 
 Also included as a predictor is the current exchange market price. It is generally agreed that as the race approaches off time the exchange market becomes more eficcient (and more liquid). That means close to the off time the prices offer a very good indication of a horses chances, it also means there are less likely to be any prices that offer a considerable amount of *value*. I've found that placing bets around 2-3 hours before the race hits a sweet spot of enough market liquidity and a market with enough prices that don't represent true chances of winning and thus offer a money making opportunity.
 
