@@ -40,7 +40,7 @@ Also included as a predictor is the current exchange market price. It is general
 
 ## Models
 
-Basically a couple of stackled LightGBM models.
+Eventually settled on a couple of stackled LightGBM models.
 
 The first uses a LambdaRank objective function, the output of which is then pushed through a softmax function on a race by race basis.
 
