@@ -29,7 +29,7 @@ Aprprox 400ish features extracted from raw results data.
 
 Some examples are:
 
-- Exponentially weighted mean of Horse, Trainer and Jockey prize money
+- Exponentially weighted moving avg of Horse, Trainer and Jockey prize money
 - Horses SR on todays going conditions
 - Trainer places at track 
 - The avergace percentage of opponents beaten per race over a horse lifetime
