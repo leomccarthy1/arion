@@ -14,13 +14,14 @@ logging.basicConfig(level=logging.ERROR)
 
 class BetPlacer(BaseStrategy):
     def check_market_book(self, market, market_book):
-        time_to_off = market_book.market_definition.market_time - datetime.now()
+        time_to_off = market_book.market_definition.market_time - datetime.utcnow()
         if (
             market_book.status == "OPEN"
             and market_book.market_definition.race_type == "Flat"
-            and time_to_off < timedelta(hours=6)
+            and time_to_off < timedelta(hours=3) and time_to_off > timedelta(hours=2.5)
             and not market_book.inplay
         ):
+
             return True
 
     def process_market_book(self, market, market_book):

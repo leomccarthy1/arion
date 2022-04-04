@@ -108,13 +108,14 @@ class ArionModel:
         return probs
 
     def make_bets(self,X:pd.DataFrame,kelly:float = 0.04, prob_min:float = 0.2, balance:int = 500):
-        out = X[["date","horse_name","last_price"]].copy()
+        out = X[["date","horse_name","last_price",'race_id']].copy()
         try:
             out["model_prob"] = self.probs
         except AttributeError:
             out["model_prob"] = self.predict(X)
         out["kelly"] = ((out["model_prob"]*out["last_price"]) - 1)/(out["last_price"] - 1)
-        out["bet"] = (out["model_prob"] > prob_min) & (out["kelly"] > kelly)
+        out["bet"] = (out["model_prob"] > prob_min) & (out["kelly"] > kelly) & (out["kelly"] == out.groupby("race_id")["kelly"].transform("max"))
         out["bet_size"] = round(out["bet"]*out["kelly"]*balance,1)
-        
+        out.drop(columns=['race_id'])
+
         return out
