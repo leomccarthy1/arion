@@ -64,7 +64,7 @@ class ArionModel:
             model = lgb.train(self.rank_params,
                             dtrain,
                             valid_sets=[dtrain, dval],
-                            num_boost_round=250,
+                            num_boost_round=200,
                             callbacks = callbacks
                         )
             
@@ -84,7 +84,7 @@ class ArionModel:
         
         self.lgbst_rank = lgb.train(self.rank_params,
                             dtrain,
-                            num_boost_round=250
+                            num_boost_round=200
                         )
 
         train["rank"] = self.get_oof(train)
@@ -93,7 +93,7 @@ class ArionModel:
         dtrain = lgb.Dataset(train.drop(columns=self.not_features),label = y,free_raw_data=False)
 
         self.lgbst = lgb.train(train_set = dtrain,params = self.params,
-                     num_boost_round=650)
+                     num_boost_round=800)
 
         return self
 
