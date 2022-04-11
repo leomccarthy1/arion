@@ -34,10 +34,12 @@ def main(update:bool = False, build_features:bool = False):
         ignore_index=True,
     )
 
-    pricefiles = [f for f in os.listdir(f"data/odds/two_hour") if f.endswith(".csv")]
+    pricefiles = [f for f in os.listdir(f"data/odds/three_hour") if f.endswith(".csv")]
     prices = pd.concat(
-        [pd.read_csv(f"data/odds/two_hour/{i}", parse_dates=["time"]) for i in pricefiles]
+        [pd.read_csv(f"data/odds/three_hour/{i}", parse_dates=["time"]) for i in pricefiles]
     )
+
+    prices = prices.drop_duplicates(subset=['market_id','selection_name'])
 
 
     cleaned_data = clean.clean_data(results)
