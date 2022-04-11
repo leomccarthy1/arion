@@ -177,6 +177,16 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame = None):
         ],
         halflife=2,
     )
+    df_race = exponentials(
+        df_race,
+        groups=[["trainer","month"]],
+        features=[
+            "prize",
+            "ovr_btn",
+            "won",
+        ],
+        halflife=10,
+    )
     df_race = last_race(df_race)
     
     if prices is not None:
