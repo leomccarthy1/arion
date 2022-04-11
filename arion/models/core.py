@@ -11,7 +11,7 @@ class ArionModel:
                         'num_leaves': 64,
                         'objective': 'binary',
                         'num_threads': 7,
-                        'eta': 0.04,
+                        'eta': 0.02,
                         'bagging_fraction': 0.9,
                         'bagging_freq': 2,
                         'max_depth': 16,
