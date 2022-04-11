@@ -68,7 +68,6 @@ class BetfairPrices:
         self.trading.login()
         races = []
         for file in files:
-            print(file)
             stream = self.trading.streaming.create_historical_generator_stream(
                 file_path=file,
                 listener=self.listener,
