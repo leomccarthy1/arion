@@ -117,7 +117,7 @@ class BetfairPrices:
                 prices.sort_values(by="time", inplace=True)
                 match = np.searchsorted(
                     prices.time,
-                    market_book.market_definition.market_time - timedelta(hours=3),
+                    market_book.market_definition.market_time - timedelta(hours=1),
                 )
                 if match == 0:
                     match = 1
@@ -137,7 +137,7 @@ def main(
     years: List[int],
     mode: str = "transform",
     download_folder: str = "data/odds/betfair",
-    output_folder: str = "data/odds/three_hour",
+    output_folder: str = "data/odds/one_hour",
 ):
     streamer = BetfairPrices()
 
