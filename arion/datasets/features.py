@@ -7,9 +7,9 @@ from typing import List
 
 def draw_fts(df: pd.DataFrame) -> pd.DataFrame:
     df["draw_wins"] = df.groupby(["course", "draw", "distance_f"])["won"].apply(
-        lambda x: x.cumsum().shift().fillna(0)
+        lambda x: x.cumsum().shift(4).fillna(0)
     )
-    runs = df.groupby(["course", "draw", "distance_f"]).cumcount()
+    runs = df.groupby(["course", "draw", "distance_f"]).cumcount().shift(4)
     df["draw_strike"] = (df["draw_wins"] / runs).fillna(0)
 
     return df
@@ -22,10 +22,15 @@ def exponentials(
     for group in groups:
         group_name = "_".join(group)
         feature_names = [f"{group_name}_{i}_ewm" for i in features]
-
-        df[feature_names] = df.groupby(group)[features].apply(
-            lambda x: x.ewm(halflife=halflife).mean().shift(1)
-        )
+        if "horse_name" in group:
+            df[feature_names] = df.groupby(group)[features].apply(
+                lambda x: x.ewm(halflife=halflife).mean().shift(1)
+            )
+        else:
+            df[feature_names] = df.groupby(group)[features].apply(
+                lambda x: x.ewm(halflife=halflife).mean().shift(10)
+            )
+            
 
     return df
 
