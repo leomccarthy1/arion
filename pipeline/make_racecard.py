@@ -32,11 +32,11 @@ def main(scrape_card:bool = True, update_results:bool = True):
         scraper.scrape_racecard(day = 'today', folder = 'data/racecards/raw')
     
     day = datetime.today().strftime('%Y_%m_%d')
+    results = results.loc[results["date"] < day.replace("_",'-')]
     card = pd.read_csv(f'data/racecards/raw/{day}.csv', parse_dates=['datetime'])
     card = card.loc[~card['draw'].isna()]
     card = clean.clean_data(card)
-
-    combined = pd.concat([results,card],ignore_index=True).sort_values(by='datetime')
+    combined = pd.concat([results,card],ignore_index=True).sort_values(by=['datetime',"horse_name"]).reset_index(drop=True)
 
     processed = features.make_features(combined)
     processed_card = processed.loc[processed['date'] == day.replace("_","-")]

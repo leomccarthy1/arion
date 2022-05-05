@@ -7,9 +7,9 @@ from typing import List
 
 def draw_fts(df: pd.DataFrame) -> pd.DataFrame:
     df["draw_wins"] = df.groupby(["course", "draw", "distance_f"])["won"].apply(
-        lambda x: x.cumsum().shift(4).fillna(0)
+        lambda x: x.cumsum().shift(5).fillna(0)
     )
-    runs = df.groupby(["course", "draw", "distance_f"]).cumcount().shift(4)
+    runs = df.groupby(["course", "draw", "distance_f"]).cumcount()
     df["draw_strike"] = (df["draw_wins"] / runs).fillna(0)
 
     return df
@@ -190,7 +190,7 @@ def make_features(df_race:pd.DataFrame, prices:pd.DataFrame = None):
             "ovr_btn",
             "won",
         ],
-        halflife=10,
+        halflife=20,
     )
     df_race = last_race(df_race)
     

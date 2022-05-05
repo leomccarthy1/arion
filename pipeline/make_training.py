@@ -42,7 +42,8 @@ def main(update:bool = False, build_features:bool = False):
     prices = prices.drop_duplicates(subset=['market_id','selection_name'])
 
 
-    cleaned_data = clean.clean_data(results)
+    cleaned_data = clean.clean_data(results).sort_values(by=['datetime',"horse_name"]).reset_index(drop=True)
+    cleaned_data = cleaned_data.drop_duplicates(subset=['date','horse_name'])
     cleaned_data.to_csv("data/results/processed/results_clean.csv",index = False)
     if build_features:
         processed_data = features.make_features(cleaned_data ,prices=prices)
